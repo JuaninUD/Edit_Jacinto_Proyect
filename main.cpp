@@ -30,14 +30,12 @@ char data[2];
 const char *mensaje_inicio = "Arranque del programa\n\r";
 // Funciones 
 
-void tiempo(void);
 void message(void);
 void screen(void);
 void start(void);
 void formula(void);
 void clean(void);
 void hello(void);
-void watch(void);
 void voltage(void);
 void temperatura(void);
 void form(void);
@@ -57,38 +55,38 @@ void time_temp(void)
 
 int main()
 { 
-   // arranque del programa      
-    message(); //Texto Inicio
+    hello(); //Saludo OLED
     start(); // Edita la pantalla
-    time();
+    time(); // Espera por 3 segundos
     screen(); // Inicia Pantalla
     
 
     //arranque del sensor de temperatura
-     i2c.write(TMP102_ADDRESS, comando, 3);
-    // Saludo
-    hello();
+    i2c.write(TMP102_ADDRESS, comando, 3);
 
     while (true) {
         // Lectura del sensor analogo (Potenciometro)
-        formula();
-        // Visualizacion
-        clean();
-        // Muestra Voltage Pantalla Oled
-        voltage();
+        formula(); //Ecuacion para calcular el voltage y mostrarlo en la OLED
+
+        clean(); // Limpia la Oled
+
+        voltage(); //Volage Mostrado en la pocision (0,2) OLED
 
         // impresion puerto serie
         serial.write(men, strlen(men));
+
         //Lectura sensor I2C
-        // Leer el registro de temperatura
-        registro();
-        form();
 
-        time_temp();
+        registro(); //Envia, guarda y Lee el sensor De Temperatura
+        
+        form(); //Desplaza los bits mas significativos y calcula la temperatura en grados
 
-        clean();
+        time_temp();//Tiempo de espera
 
-        temperatura();
+        clean();//Limpia la pantalla oled
+
+        temperatura();//Imprime las variables ent y dec en la oled
+        
         // impresion puerto serie
         serial.write(men, strlen(men));        
 
@@ -123,12 +121,6 @@ void formula(void)
     dec = int((Vin-ent)*10000); 
 }
 
-void watch(void)
-{
-    oled.clearDisplay();
-    oled.display();
-}
-
 void voltage(void)
 {
     sprintf(men, "El voltaje es:\n\r %01u.%04u volts \n\r", ent, dec);
@@ -139,15 +131,18 @@ void voltage(void)
 
 void registro(void)
 {
-    comando[0] = 0; // Registro de temperatura
-    i2c.write(TMP102_ADDRESS, comando, 1); // Enviar el comando para leer
-    i2c.read(TMP102_ADDRESS, data, 2); // Leer 2 bytes
+    comando[0] = 0; // Accede al Registro 0x00
+    i2c.write(TMP102_ADDRESS, comando, 1); // Enviar al registro 0x90 
+    //(Sensor Temp)
+
+    i2c.read(TMP102_ADDRESS, data, 2); // Leer el sensor y lo guarda variable data
 }
 
 void form(void)
 {
-    int16_t temp = (data[0] << 4) | (data[1] >> 4);
-    float Temperatura = temp *0.0625; 
+    int16_t temp = (data[0] << 4) | (data[1] >> 4); //Obtiene los bits mas significativos
+
+    float Temperatura = temp *0.0625;  //Formula para calcular la temperatura
     ent = int(Temperatura); 
     dec = int((Temperatura-ent)*10000); 
 }
